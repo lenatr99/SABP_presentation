@@ -29,6 +29,8 @@
     background: var(--bg);
     color: var(--ink);
     font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   body { overflow: hidden; }
@@ -412,6 +414,40 @@
     cursor: pointer;
   }
 
+  .print-hint {
+    position: fixed;
+    left: 1rem;
+    bottom: 1rem;
+    z-index: 20;
+    padding: .55rem .8rem;
+    border-radius: 999px;
+    background: rgba(12, 20, 36, .5);
+    color: #ffffff;
+    font-size: .85rem;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  body.print-prep {
+    overflow: hidden;
+  }
+
+  body.print-prep .deck {
+    display: block;
+    position: fixed;
+    inset: 0;
+  }
+
+  body.print-prep .slide {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: calc(2.2vh * var(--fit-scale));
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    visibility: hidden;
+  }
+
   @media (max-width: 860px) {
     body { overflow: auto; }
     .deck { display: block; height: auto; }
@@ -429,21 +465,55 @@
     .stats-grid { grid-template-columns: 1fr; }
     .bottom-figures { grid-template-columns: 1fr; }
     .footer { margin-top: 2rem; }
+    .print-hint { left: .75rem; right: .75rem; bottom: .75rem; text-align: center; }
+  }
+
+  @page {
+    size: 13.333in 7.5in;
+    margin: 0;
   }
 
   @media print {
-    body { overflow: visible; background: #fff; }
-    .controls { display: none; }
-    .deck { display: block; height: auto; }
-    .slide,
-    .slide.active {
-      overflow: visible;
-      display: block;
+    html, body {
       width: 100%;
       height: auto;
+      overflow: visible;
+      background: #fff;
+    }
+    .controls,
+    .print-hint,
+    .lightbox {
+      display: none !important;
+    }
+    .deck {
+      display: block;
+      height: auto;
+      width: 100%;
+    }
+    .slide,
+    .slide.active {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: calc(2.2vh * var(--fit-scale));
+      overflow: hidden;
+      width: 13.333in;
+      height: 7.5in;
+      margin: 0;
+      padding: .55in .7in .42in;
       box-shadow: none;
       border: 0;
+      break-after: page;
       page-break-after: always;
+      page-break-inside: avoid;
+    }
+    .slide:last-child,
+    .slide.active:last-child {
+      break-after: auto;
+      page-break-after: auto;
+    }
+    .slide img:not(.lightbox-img) {
+      cursor: default;
+      transform: none !important;
     }
   }
 </style>
@@ -452,7 +522,10 @@
 <div class="controls" aria-label="Presentation controls">
   <button type="button" id="prevBtn">Nazaj</button>
   <button type="button" id="nextBtn">Naprej</button>
+  <button type="button" id="printBtn">PDF</button>
 </div>
+
+<div class="print-hint">Izvoz v PDF: klikni PDF ali uporabi Cmd/Ctrl + P.</div>
 
 <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Povečana slika">
   <button type="button" class="lightbox-close" id="lightboxClose" aria-label="Zapri">&times;</button>
@@ -640,11 +713,12 @@
   const slides = Array.from(document.querySelectorAll('.slide'));
   const prevBtn = document.getElementById('prevBtn');
   const nextBtn = document.getElementById('nextBtn');
+  const printBtn = document.getElementById('printBtn');
   let current = 0;
   let fitFrame = null;
 
   function fitSlide(slide) {
-    if (!slide || !slide.classList.contains('active')) return;
+    if (!slide) return;
     slide.style.setProperty('--fit-scale', '1');
 
     let scale = 1;
@@ -665,6 +739,18 @@
   function scheduleFit() {
     if (fitFrame) cancelAnimationFrame(fitFrame);
     fitFrame = requestAnimationFrame(() => fitSlide(slides[current]));
+  }
+
+  function fitAllSlides() {
+    document.body.classList.add('print-prep');
+    slides.forEach((slide) => fitSlide(slide));
+    document.body.classList.remove('print-prep');
+  }
+
+  function printDeck() {
+    closeLightbox();
+    fitAllSlides();
+    requestAnimationFrame(() => window.print());
   }
 
   function showSlide(index) {
@@ -727,8 +813,10 @@
 
   prevBtn.addEventListener('click', prevSlide);
   nextBtn.addEventListener('click', nextSlide);
+  printBtn.addEventListener('click', printDeck);
   window.addEventListener('resize', scheduleFit);
   window.addEventListener('load', scheduleFit);
+  window.addEventListener('beforeprint', fitAllSlides);
   if (document.fonts?.ready) document.fonts.ready.then(scheduleFit);
   showSlide(0);
 </script>
