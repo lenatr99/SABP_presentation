@@ -1,0 +1,66 @@
+Statistična analiza enoceličnih transkriptomskih podatkov pri razvoju vrste *Dictyostelium*
+Govorno besedilo za 7-diapozitivno predstavitev
+
+
+Diapozitiv 1: Naslov
+Pozdravljeni, sem Lena Trnovec, doktorska študentka v laboratoriju za bioinformatiko. Danes bom predstavila primer statistične analize enoceličnih transkriptomskih podatkov pri razvoju vrste *Dictyostelium*. To temo sem izbrala zato, ker je analiza razvojne sinhronosti eden od rezultatov, ki smo jih nedavno objavili, hkrati pa je to zelo dober primer statističnih odločitev, ki se pogosto pojavijo pri enoceličnih podatkih.
+
+Glavno vprašanje je sinhronost razvoja: kako usklajeno celice napredujejo skozi razvoj in kakšno vlogo ima pri tem signalizacija cAMP. Najprej bom na kratko predstavila svojo vlogo in biološki sistem, nato podatke in vzorec v prostoru UMAP, potem pa še hipoteze, predpostavke in izbiro testa ter na koncu smer, v katero gre moje doktorsko delo.
+
+
+Diapozitiv 2: Moja vloga
+Najprej še nekaj konteksta o moji vlogi. Moje ozadje je precej mešano: po osnovni izobrazbi prihajam iz biokemije, nato sem nadaljevala v računalništvu, zdaj pa v doktoratu delam predvsem na računski in statistični strani analize.
+
+Sama ne izvajam laboratorijskega dela. Celice, kulture in sekvenciranje pripravljajo sodelavci na Baylor College of Medicine v Houstonu, s katerimi sodelujemo približno tri leta. Moj del je analiza: enocelične podatke, ki jih oni ustvarijo, pripravim za obdelavo, izberem ustrezne statistične pristope in rezultate interpretiram skupaj z njimi.
+
+
+Diapozitiv 3: Biološki sistem
+Nekaj biologije za začetek. *Dictyostelium discoideum* je socialna ameba. Običajno živi kot posamezne celice v tleh, kjer se prehranjuje z bakterijami. Ko hrane zmanjka, pa se zgodi nekaj zanimivega: celice preidejo iz enoceličnega v večcelični način življenja. Začnejo si pošiljati pulze cAMP, se združijo v skupke in se v približno dvajsetih urah diferencirajo v dve glavni usodi: predsporne celice, iz katerih nastanejo spore, in predstebelne celice, ki tvorijo steblo.
+
+Za mojo analizo je ta sistem zanimiv predvsem iz dveh razlogov. Prvič, razvoj je časovno dobro opredeljen, saj celice vzorčimo pri 0, 4, 8, 12, 16 in 20 urah po stradanju, zato je čas dejanska spremenljivka v eksperimentalnem načrtu. Drugič, na voljo imamo dva mutanta, ki signalizacijo cAMP porušita na različna načina. Eden, acaA-minus, pulzov cAMP sploh ne more tvoriti in se ne razvije. Drugi, acaA-pkaC-overexpression, prav tako ne more tvoriti pulzov cAMP, vendar se zaradi prekomernega izražanja PKA vseeno razvije. To pomeni, da imamo kontrolno skupino, ki ni le večji vzorec, ampak je tudi mehanistično dobro utemeljena.
+
+
+Diapozitiv 4: Enocelični časovni niz
+To so podatki, s katerimi delamo. Gre za veliko matriko, s približno 30.000 vrsticami, kjer vsaka vrstica predstavlja eno celico, in tisoči stolpcev, kjer vsak stolpec predstavlja en gen. Vnosi v matriki so števila transkriptov oziroma koliko molekul RNA posameznega gena smo zaznali v posamezni celici. Poleg tega ima vsaka celica tudi metapodatke: iz katerega seva prihaja, iz katere časovne točke in iz katere biološke replike.
+
+Zelo pomembno pa je naslednje, in to se bo ponovilo še kasneje: 30.000 celic ne pomeni 30.000 neodvisnih opazovanj. Veliko teh celic prihaja iz iste kulture. Skupina na Baylorju je zato eksperiment zasnovala zelo premišljeno. Vsako kulturo so vzgojili ločeno in jo označili z drugim fluorescenčnim proteinom, na primer GFP, mCerulean, mCherry ali mNeonGreen. Kulture so združili šele tik pred sekvenciranjem. Med analizo tako vsaka celica še vedno nosi oznako svoje replike, zato lahko vedno vemo, iz katere neodvisne kulture izvira. To nam da tri ali štiri neodvisne biološke replike za vsak sev in vsako časovno točko, in prav to število je ključno za statistično sklepanje.
+
+
+Diapozitiv 5: Kaj pokažejo podatki - UMAP
+Preden sploh naredimo statistični test, si najprej poglejmo, kako so ti podatki videti v dveh dimenzijah. To so UMAP projekcije. Lahko si jih predstavljamo kot sploščene zemljevide, kjer vsaka točka predstavlja eno celico, celice s podobnim genskim izražanjem pa ležijo blizu skupaj. To je predvsem način, da tisoče genov na celico stisnemo v nekaj, kar lahko vizualno interpretiramo.
+
+Zgoraj levo so celice divjega tipa, obarvane po času razvoja. Vidimo dva glavni skupini: manjša desno predstavlja zgodnje, enocelično obdobje pri 0 in 4 urah, večji levo pa vse od 8 ur naprej. Znotraj večje skupine se barve lepo prelivajo od zgodnjih do poznejših časovnih točk, kar je pravzaprav to, kar pričakujemo pri usklajenem razvoju.
+
+Zgoraj desno so iste celice, le da so obarvane po tipu celice. Poznejši grozd se razcepi v dve regiji: ena ustreza predsporni, druga predstebelni usodi.
+
+Spodaj levo je mutant acaA-minus. Skoraj vse celice ostanejo ujete v zgodnjem, enoceličnem območju. Brez signalizacije cAMP se razvoj sploh ne začne.
+
+Spodaj desno pa je mutant acaA-pkaC-overexpression. Ta je posebej zanimiv, ker se te celice kljub odsotnosti pulzov cAMP vseeno razvijejo v predsporno in predbetno smer. Obe regiji torej dosežejo. Če pa pogledamo barve, vidimo, da so časovne točke močno premešane. V istem času najdemo celice na stopnjah, ki so pri divjem tipu sicer lepo časovno ločene. Razvoj torej poteka, vendar brez sinhronosti.
+
+Če to povzamem kvalitativno: pulzi cAMP pomagajo ohranjati usklajeno napredovanje celic skozi razvoj. Sama odločitev za celično usodo, torej predsporna proti predbetni, pa je vsaj delno ločena od tega in v mutantu ostane ohranjena. Na naslednjem diapozitivu to sliko pretvorimo v konkreten statistični test.
+
+
+Diapozitiv 6: Hipoteze, predpostavke, izbira testa
+To je del, ki ga želim predstaviti nekoliko bolj natančno, ker se prav tukaj pokažejo ključne statistične odločitve.
+
+Hipoteza na diapozitivu predstavlja najpreprostejši primer: primerjamo divji tip AX4 in mutant acaA-minus pri 8 urah. Osem ur je za divji tip posebej informativna časovna točka, ker se takrat pulzi cAMP že jasno vzpostavijo. Ničelna domneva H₀ pravi, da je povprečna sinhronost pri obeh sevih pri 8 urah enaka, torej da cAMP nima učinka. Alternativna domneva Hₐ pravi, da se povprečji razlikujeta, torej da cAMP vpliva na sinhronost.
+
+Prva resna odločitev je, kaj sploh štejemo kot eno neodvisno opazovanje. Pri enoceličnih podatkih je to pogosto past. Imamo na tisoče celic, vendar jih veliko prihaja iz iste kulture, zato niso neodvisne. Če bi vsako celico obravnavali kot samostojno opazovanje in naredili t-test na ravni posameznih celic, bi dobili zelo majhno standardno napako in p-vrednost, ki bi bila statistično značilna tudi za razliko, ki bi bila biološko zanemarljiva. To je psevdoreplikacija. Zato vse celice znotraj ene replike najprej povzamemo v eno samo vrednost sinhronosti za posamezno repliko, časovno točko in sev. Po tem koraku je n enak tri na skupino.
+
+Naslednje vprašanje je interval zaupanja. Okoli povprečne sinhronosti želimo oceniti 95-odstotni interval zaupanja. Z-interval bi zahteval, da poznamo populacijsko varianco σ, česar ne vemo. T-interval sicer ne potrebuje σ, vendar predpostavi, da so tri vrednosti replik približno normalno porazdeljene, česar s tremi točkami praktično ne moremo preveriti. Zato uporabimo neparametrični bootstrap: tri vrednosti replik večkrat vzorčimo s ponavljanjem, vsakič ponovno izračunamo povprečje, to ponovimo 10.000-krat in nato vzamemo 2,5. ter 97,5. percentil. Tako interval zaupanja temelji le na variabilnosti, ki jo dejansko opazimo, brez predpostavke normalnosti.
+
+Potem pride sam test. Gre za t-test na ravni bioloških replik, kjer primerjamo dva seva v eni časovni točki. Ne uporabimo hi-kvadrata, ker izid ni kategorialen, ampak zvezna vrednost na intervalu med 0 in 1. Ne uporabimo z-testa, ker je σ neznan. Ne uporabimo ANOVE, ker nas ne zanima en sam velik faktorski model, ampak konkretna parna primerjava. Uporabimo Welchov t-test, ker dopušča različni varianci v obeh skupinah. Če je p manjši od 0,05, ničelno domnevo ovržemo.
+
+Pri interpretaciji zato gledamo dve stvari. Statistični test nam pove, ali je razlika med sevoma verjetno resnična in ne zgolj posledica naključnega nihanja. Interval zaupanja pa nam pove, kako velika je ta razlika in kako negotova je naša ocena. Šele skupaj sta ti dve informaciji zares uporabni: če je razlika statistično značilna in se intervali zaupanja za AX4 in acaA-minus od 8 ur naprej jasno ločijo, lahko precej bolj samozavestno rečemo, da ne gre le za statistični signal, ampak za biološko relevantno razliko v sinhronosti.
+
+
+Diapozitiv 7: Smer naprej - napoved transkripcijskih faktorjev z umetno inteligenco
+Za konec še zelo na kratko, kam gre to delo naprej. Rezultat o sinhronosti pokaže, da se celice divjega tipa razvijajo zelo usklajeno. Naravno naslednje vprašanje je, kaj se zgodi potem: ko je ta usklajenost vzpostavljena, kako se celice razcepijo v predsporno in predbetno usodo in kateri transkripcijski faktorji ta razcep usmerjajo.
+
+Smer, ki jo trenutno raziskujem, je uporaba modelov umetne inteligence oziroma temeljnih modelov, naučenih na velikih zbirkah enoceličnih podatkov, skupaj z omrežnimi pristopi, za napoved transkripcijskih faktorjev, ki bi lahko poganjali to odločitev o celični usodi. Ideja je, da taki modeli lahko vnesejo biološki kontekst, ki ga en sam podatkovni nabor sam po sebi ne zajame, in s tem predlagajo kandidate, ki jih je vredno podrobneje preveriti.
+
+Rezultat, ki ga želim dobiti, ni dokončen odgovor, ampak prednostno razvrščen kratek seznam kandidatnih transkripcijskih faktorjev - torej hipotez, razvrščenih glede na to, kako močno jih podpirajo modeli in podatki. Tak seznam lahko skupina na Baylorju nato dejansko vzame v laboratorij in ga eksperimentalno preveri. Računski del torej predlaga kandidate, laboratorij pa iz kandidata naredi dejansko ugotovitev.
+
+Ta del doktorata je še v zgodnji fazi, zato še ugotavljam, kateri modeli in pristopi so za ta sistem najbolj primerni. Zelo bom vesela vprašanj, predlogov ali idej, na kaj bi bilo po vašem mnenju posebej dobro paziti.
+
+Hvala za pozornost.
