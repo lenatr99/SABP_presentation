@@ -482,12 +482,12 @@
     </div>
     <div class="content text-only">
       <div class="panel">
-        <p class="lead">V projektu pokrivam računski del analize: od priprave podatkov do statističnega sklepanja.</p>
+        <p class="lead">Moje ozadje je mešano, moj prispevek pa je predvsem računska in statistična analiza.</p>
         <ul class="bullets">
-          <li>Po izobrazbi sem biokemičarka, nato pa sem se usmerila v računalništvo in bioinformatiko.</li>
-          <li>Laboratorijski del izvajajo partnerji; moj del je analiza enoceličnih transkriptomskih podatkov.</li>
-          <li>S sodelavci iz Baylor College of Medicine sodelujemo približno tri leta.</li>
-          <li>Doktorski cilj: od sinhronosti razvoja do celičnih linij in kandidatov za transkripcijske faktorje.</li>
+          <li>Po osnovni izobrazbi prihajam iz biokemije, nato sem nadaljevala v računalništvu.</li>
+          <li>V doktoratu delam predvsem na računski in statistični strani analize.</li>
+          <li>Laboratorijsko delo, kulture in sekvenciranje pripravljajo sodelavci na Baylor College of Medicine v Houstonu.</li>
+          <li>Moj del je priprava podatkov, izbira statističnih pristopov in interpretacija rezultatov skupaj s sodelavci.</li>
         </ul>
       </div>
     </div>
@@ -504,12 +504,13 @@
     </div>
     <div class="content">
       <div class="panel">
-        <p class="lead">Časovno opredeljen razvojni program z ustreznimi mutantnimi kontrolami je jasna osnova za statistično analizo.</p>
+        <p class="lead">Dictyostelium je uporaben model, ker je razvoj časovno dobro opredeljen in ga lahko mehanistično motimo.</p>
         <ul class="bullets">
-          <li>Stradanje sproži približno 20-urni razvojni program; vzorčenje v fiksnih intervalih daje časovne posnetke razvoja.</li>
-          <li>cAMP pulzi usklajujejo agregacijo; pozneje se celice razcepijo v predsporno in predbetno usodo.</li>
-          <li>Dva mutanta porušita cAMP signalizacijo — eden razvoj povsem ustavi, drugi se razvija brez pulzov.</li>
-          <li>Takšna genska perturbacija nam da mehanistično utemeljeno kontrolno skupino, ne zgolj večjega vzorca.</li>
+          <li>Ob stradanju celice preidejo iz enoceličnega v večcelični način življenja.</li>
+          <li>cAMP pulzi sprožijo agregacijo; v približno 20 urah nastaneta predsporna in predstebelna usoda.</li>
+          <li>Vzorčimo pri 0, 4, 8, 12, 16 in 20 urah, zato je čas dejanska spremenljivka v načrtu.</li>
+          <li>Mutant acaA⁻ pulzov cAMP ne more tvoriti in se ne razvije.</li>
+          <li>Mutant acaA⁻pkaC<sup>OE</sup> pulzov ne more tvoriti, vendar se zaradi PKA vseeno razvije.</li>
         </ul>
       </div>
       <figure class="figure-card">
@@ -530,12 +531,14 @@
     </div>
     <div class="content">
       <div class="panel">
-        <p class="lead">Matrika genskega izražanja in struktura replikacije sta enako pomembni za statistične sklepe.</p>
+        <p class="lead">Pomembni niso le transkripti na ravni celic, ampak tudi to, iz katere replike vsaka celica prihaja.</p>
         <ul class="bullets">
-          <li>Skupno približno 30.000 celic; vrstice predstavljajo celice, stolpci gene, vnosi pa število transkriptov.</li>
-          <li>Vzorčeno pri 0, 4, 8, 12, 16 in 20 urah po stradanju za tri seve (AX4, acaA⁻, acaA⁻pkaC<sup>OE</sup>).</li>
-          <li>Tri do štiri neodvisne biološke replike za vsako kombinacijo seva in časovne točke: ločene kulture, vsaka označena z drugim fluorescenčnim proteinom (GFP / mCerulean / mCherry / mNeonGreen), združene šele tik pred sekvenciranjem.</li>
-          <li>30.000 celic ≠ 30.000 neodvisnih opazovanj — za sklepanje je ključno število bioloških replik (glej diapozitiv 5).</li>
+          <li>Približno 30.000 vrstic pomeni približno 30.000 celic; stolpci so geni, vnosi pa število transkriptov.</li>
+          <li>Vsaka celica ima metapodatke: iz katerega seva prihaja, iz katere časovne točke in iz katere replike.</li>
+          <li>30.000 celic ne pomeni 30.000 neodvisnih opazovanj.</li>
+          <li>Kulture so vzgojili ločeno, vsako označili z drugim fluorescenčnim proteinom in jih združili šele tik pred sekvenciranjem.</li>
+          <li>Zato za vsako celico vemo, iz katere neodvisne kulture izvira.</li>
+          <li>Za vsak sev in časovno točko imamo tri ali štiri neodvisne biološke replike.</li>
         </ul>
       </div>
       <figure class="figure-card figure-stack">
@@ -557,13 +560,13 @@
     </div>
     <div class="content">
       <div class="panel">
-        <p class="lead">Vsaka točka predstavlja eno celico; podobne celice na zemljevidu ležijo blizu druga drugi.</p>
+        <p class="lead">UMAP je vizualni povzetek: vsaka točka je ena celica, bližnje točke pa imajo podobno gensko izražanje.</p>
         <ul class="bullets">
-          <li>Divji tip po času: dva grozda — zgodnji (0–4 h) in poznejše stopnje — z jasno časovno potjo med njima.</li>
-          <li>Divji tip po tipu celic: poznejši grozd se razcepi v dve usodi, predsporno in predbetno.</li>
-          <li>acaA⁻ (brez cAMP signalizacije): celice ostanejo v zgodnjem območju — razvoj se ne začne.</li>
-          <li>acaA⁻pkaC<sup>OE</sup> (razvoj brez cAMP pulzov): celice dosežejo poznejše stopnje, vendar so časovne točke premešane — razvoj poteka, a brez sinhronosti.</li>
-          <li>Naslednji korak je vprašanje, kako ta vizualni vzorec pretvorimo v statistični test na ravni bioloških replik.</li>
+          <li>Divji tip, obarvan po času: zgodnje celice pri 0 in 4 urah so ločene od poznejših stopenj, barve pa se lepo prelivajo.</li>
+          <li>Divji tip, obarvan po tipu celice: poznejši del se razcepi v predsporno in predstebelno regijo.</li>
+          <li>acaA⁻: skoraj vse celice ostanejo v zgodnjem, enoceličnem območju.</li>
+          <li>acaA⁻pkaC<sup>OE</sup>: celice dosežejo obe usodi, vendar so časovne točke močno premešane.</li>
+          <li>Sklep: cAMP pulzi pomagajo ohranjati razvojno sinhronost, odločitev za usodo pa je vsaj delno ločena od tega.</li>
         </ul>
       </div>
       <figure class="figure-card">
@@ -590,20 +593,20 @@
         </div>
         <div class="box" style="min-height:0; gap:.15rem;">
           <strong>1. Neodvisnost</strong>
-          <span>Celice iz iste kulture niso neodvisne — če jih obravnavamo kot neodvisne, dobimo <b>psevdoreplikacijo</b>. Zato agregiramo na eno vrednost na biološko repliko -&gt; n = 3, ne 5.000.</span>
+          <span>Celice iz iste kulture niso neodvisne, zato bi test na ravni celic povzročil <b>psevdoreplikacijo</b>. Vse celice znotraj replike zato povzamemo v eno vrednost sinhronosti; po tem koraku je n = 3 na skupino.</span>
         </div>
         <div class="box" style="min-height:0; gap:.15rem;">
           <strong>2. 95-% interval zaupanja z neparametričnim bootstrapom</strong>
-          <span>σ je neznan, zato ne uporabimo z-intervala; pri treh replikah normalnosti ne moremo zanesljivo preveriti, zato je t-interval tvegan. Vzorčimo s ponavljanjem 10.000-krat in vzamemo 2,5. ter 97,5. percentil.</span>
+          <span>σ je neznan, pri treh replikah pa normalnosti ne moremo zanesljivo preveriti. Zato replike 10.000-krat vzorčimo s ponavljanjem in vzamemo 2,5. ter 97,5. percentil.</span>
         </div>
         <div class="box" style="min-height:0; gap:.15rem;">
           <strong>3. <i>t</i>-test na ravni replik (Welch)</strong>
-          <span>Izid je zvezna spremenljivka (ne χ²); primerjamo dve skupini (ANOVA ni potrebna); σ je neznan (ne z-test). Welchov t-test upošteva neenake variance.</span>
+          <span>Primerjamo dva seva v eni časovni točki. Izid je zvezna vrednost med 0 in 1, σ je neznan, varianci pa se lahko razlikujeta, zato uporabimo Welchov <i>t</i>-test.</span>
         </div>
       </div>
       <figure class="figure-card">
         <img src="assets/dicty_presentation/synchronicity_plot.png" alt="Synchronicity over time for AX4 and mutants with bootstrap CIs">
-        <figcaption>Svetlejše točke predstavljajo replike; temna črta je povprečje; pas prikazuje 95-% bootstrap interval zaupanja. Ko se pasovi od 8 h naprej ne prekrivajo, H₀ ovržemo. <b>Statistična značilnost ≠ velikost učinka</b> — na skali od 0 do 1 je razmik med intervali neposreden pokazatelj velikosti učinka.</figcaption>
+        <figcaption>Svetlejše točke so replike; temna črta je povprečje; pas prikazuje 95-% bootstrap interval zaupanja. Če je p &lt; 0,05 in se intervali od 8 h naprej jasno ločijo, govorimo o statistično in biološko relevantni razliki.</figcaption>
       </figure>
     </div>
     <div class="footer"><span></span><span>06 / 07</span></div>
@@ -619,9 +622,9 @@
     </div>
     <div class="content text-only">
       <div class="stats-grid">
-        <div class="box"><strong>Izhodišče</strong><span>Rezultat o sinhronosti pokaže, da se celice divjega tipa razvijajo zelo usklajeno. Naravno naslednje vprašanje je, kako se nato razcepijo v predsporno in predbetno usodo.</span></div>
-        <div class="box"><strong>Pristop</strong><span>Uporabiti želim modele umetne inteligence in omrežne pristope za napoved transkripcijskih faktorjev, ki bi lahko usmerjali to odločitev o celični usodi.</span></div>
-        <div class="box"><strong>Rezultat</strong><span>Cilj je prednostno razvrščen kratek seznam kandidatov, ki jih lahko sodelavci nato eksperimentalno preverijo v laboratoriju.</span></div>
+        <div class="box"><strong>Izhodišče</strong><span>Rezultat o sinhronosti pokaže, da se divji tip razvija usklajeno. Naslednje vprašanje je, kako se celice nato razcepijo v predsporno in predstebelno usodo.</span></div>
+        <div class="box"><strong>Pristop</strong><span>Raziskujem uporabo temeljnih modelov umetne inteligence, naučenih na velikih zbirkah enoceličnih podatkov, skupaj z omrežnimi pristopi za napoved transkripcijskih faktorjev.</span></div>
+        <div class="box"><strong>Rezultat</strong><span>Cilj ni dokončen odgovor, ampak kratek prioritetni seznam kandidatnih transkripcijskih faktorjev, ki jih lahko sodelavci nato eksperimentalno preverijo.</span></div>
       </div>
     </div>
     <div class="footer"><span></span><span>07 / 07</span></div>
