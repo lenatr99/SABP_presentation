@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Statistical analysis of single-cell RNA-seq in Dictyostelium development</title>
+<style>
+  :root {
+    --ink: #ffffff;
+    --muted: #d6e4ff;
+    --line: rgba(47, 66, 96, .12);
+    --heading: #ffffff;
+    --section-color: #ffe27a;
+    --accent: #2f6fe0;
+    --accent-dark: #1b3f82;
+    --card-text: #1b2a44;
+    --card-muted: #425878;
+    --bg: #6680a6;
+    --stroke: #34486a;
+    --card-bg: rgba(255, 255, 255, .96);
+    --control-bg: rgba(247, 250, 255, .92);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+  }
+
+  body { overflow: hidden; }
+
+  .deck {
+    width: 100vw;
+    height: 100vh;
+    display: grid;
+    place-items: center;
+  }
+
+  .slide {
+    display: none;
+    width: min(100vw, 177.78vh);
+    height: min(56.25vw, 100vh);
+    background:
+      linear-gradient(rgba(40, 58, 88, .28), rgba(40, 58, 88, .38)),
+      url("assets/dicty_presentation/dicty_image.png") center center / cover no-repeat;
+    padding: 4.2vh 5vw 3.2vh;
+    border: 1px solid rgba(232, 239, 249, .24);
+    box-shadow: 0 14px 40px rgba(21, 34, 53, .24);
+  }
+
+  .slide.active {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 2.2vh;
+  }
+
+  /* Heading stroke keeps titles readable over the image. */
+  .slide-header .section,
+  .slide-header h1,
+  .slide-header h2,
+  .title-slide h1,
+  .title-slide .section,
+  .title-slide .subtitle,
+  .slide-header > div:last-child,
+  .footer {
+    text-shadow:
+      -2px -2px 0 var(--stroke),
+      0 -2px 0 var(--stroke),
+      2px -2px 0 var(--stroke),
+      -2px 0 0 var(--stroke),
+      2px 0 0 var(--stroke),
+      -2px 2px 0 var(--stroke),
+      0 2px 0 var(--stroke),
+      2px 2px 0 var(--stroke),
+      0 6px 18px rgba(15, 25, 45, .45);
+  }
+
+  .title-slide {
+    align-content: center;
+  }
+
+  .slide-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.5rem;
+    border-bottom: 3px solid var(--section-color);
+    padding-bottom: 1.3vh;
+  }
+
+  .section {
+    color: var(--section-color);
+    font-size: clamp(.7rem, 1.1vw, .95rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: .35rem;
+  }
+
+  h1, h2 {
+    margin: 0;
+    color: var(--heading);
+    letter-spacing: 0;
+    line-height: 1.08;
+  }
+
+  h1 {
+    font-size: clamp(2.6rem, 5.4vw, 4.2rem);
+    max-width: 25ch;
+  }
+
+  h2 {
+    font-size: clamp(2rem, 3.7vw, 3.6rem);
+  }
+
+  .subtitle {
+    margin: 1.5rem 0 0;
+    max-width: 52rem;
+    font-size: clamp(1.2rem, 1.7vw, 1.75rem);
+    line-height: 1.35;
+    color: #ffffff;
+  }
+
+  .content {
+    display: grid;
+    grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr);
+    gap: 2.4vw;
+    align-items: center;
+    min-height: 0;
+  }
+
+  .content.text-only {
+    display: block;
+    max-width: 74rem;
+    margin-top: 2vh;
+  }
+
+  .content.text-only.wide {
+    max-width: none;
+  }
+
+  /* White rounded card shared by body content. */
+  .panel {
+    background: var(--card-bg);
+    color: var(--card-text);
+    border-radius: 22px;
+    padding: clamp(1.1rem, 1.8vw, 1.8rem) clamp(1.3rem, 2.1vw, 2.1rem);
+    box-shadow:
+      0 18px 40px rgba(15, 25, 45, .28),
+      0 2px 6px rgba(15, 25, 45, .14);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: .3rem;
+    min-width: 0;
+  }
+
+  .bullets {
+    margin: 0;
+    padding-left: 1.25em;
+    font-size: clamp(1.05rem, 1.4vw, 1.4rem);
+    line-height: 1.4;
+    color: var(--card-text);
+  }
+
+  .bullets li { margin: .55em 0; }
+  .bullets li::marker { color: var(--accent); }
+
+  .lead {
+    margin: 0 0 .6rem;
+    font-size: clamp(1.25rem, 1.75vw, 1.85rem);
+    line-height: 1.25;
+    color: var(--accent-dark);
+    font-weight: 700;
+  }
+
+  figure {
+    margin: 0;
+    min-height: 0;
+  }
+
+  .figure-card {
+    background: var(--card-bg);
+    border-radius: 22px;
+    padding: 1rem 1.1rem .9rem;
+    box-shadow:
+      0 18px 40px rgba(15, 25, 45, .28),
+      0 2px 6px rgba(15, 25, 45, .14);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;
+    min-height: 0;
+  }
+
+  .figure-stack {
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+  }
+
+  .figure-stack img {
+    max-height: 22vh;
+  }
+
+  img {
+    display: block;
+    max-width: 100%;
+    max-height: 52vh;
+    object-fit: contain;
+    margin: 0 auto;
+  }
+
+  figcaption {
+    margin-top: .6rem;
+    font-size: clamp(.78rem, .95vw, .95rem);
+    line-height: 1.3;
+    color: var(--card-muted);
+    text-align: center;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.1rem;
+    margin-top: 1.4rem;
+  }
+
+  .bottom-figures {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.2rem;
+    margin-top: 1.3rem;
+    align-items: stretch;
+  }
+
+  .bottom-figures .figure-card {
+    padding: .8rem .9rem .7rem;
+  }
+
+  .bottom-figures img {
+    max-height: 18vh;
+  }
+
+  .bottom-figures.tall img {
+    max-height: 23vh;
+  }
+
+  .bottom-figures.tall .figure-card {
+    padding: .7rem .85rem .65rem;
+  }
+
+  .content.stats-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1vh;
+    min-height: 0;
+  }
+
+  .content.stats-layout .stats-grid {
+    margin-top: 0;
+  }
+
+  .content.stats-layout .bottom-figures {
+    margin-top: 0;
+  }
+
+  .box {
+    background: var(--card-bg);
+    border-radius: 18px;
+    padding: .95rem 1.1rem;
+    min-height: 7.5rem;
+    box-shadow:
+      0 14px 32px rgba(15, 25, 45, .24),
+      0 2px 6px rgba(15, 25, 45, .12);
+    color: var(--card-text);
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+  }
+
+  .box strong {
+    display: block;
+    color: var(--accent-dark);
+    font-size: clamp(1rem, 1.3vw, 1.25rem);
+    margin-bottom: .1rem;
+  }
+
+  .box span {
+    color: var(--card-text);
+    font-size: clamp(.9rem, 1.05vw, 1.02rem);
+    line-height: 1.35;
+  }
+
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #ffffff;
+    font-size: .9rem;
+    opacity: .9;
+  }
+
+  .slide-header > div:last-child {
+    color: #ffffff;
+    font-weight: 600;
+    opacity: .9;
+    white-space: nowrap;
+  }
+
+  .slide img:not(.lightbox-img) {
+    cursor: zoom-in;
+    transition: transform .15s ease;
+  }
+
+  .slide img:not(.lightbox-img):hover {
+    transform: scale(1.015);
+  }
+
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(12, 20, 36, .88);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    padding: 3vh 3vw;
+    cursor: zoom-out;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+
+  .lightbox.open {
+    display: flex;
+    animation: lightbox-fade .18s ease;
+  }
+
+  @keyframes lightbox-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .lightbox-img {
+    max-width: 94vw;
+    max-height: 92vh;
+    object-fit: contain;
+    border-radius: 12px;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, .55);
+    background: #ffffff;
+    padding: .6rem;
+    animation: lightbox-zoom .22s ease;
+  }
+
+  @keyframes lightbox-zoom {
+    from { transform: scale(.92); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .lightbox-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(255, 255, 255, .14);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, .28);
+    border-radius: 999px;
+    width: 2.4rem;
+    height: 2.4rem;
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .lightbox-close:hover { background: rgba(255, 255, 255, .22); }
+
+  .controls {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 20;
+    display: flex;
+    gap: .45rem;
+  }
+
+  button {
+    border: 1px solid rgba(232, 239, 249, .34);
+    background: var(--control-bg);
+    color: #365178;
+    border-radius: 4px;
+    padding: .45rem .7rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  @media (max-width: 860px) {
+    body { overflow: auto; }
+    .deck { display: block; height: auto; }
+    .slide {
+      width: 100%;
+      height: auto;
+      min-height: 100vh;
+      padding: 4rem 1.2rem 2rem;
+      border: 0;
+    }
+    .slide.active { display: block; }
+    .content { grid-template-columns: 1fr; }
+    img { max-height: none; }
+    .stats-grid { grid-template-columns: 1fr; }
+    .bottom-figures { grid-template-columns: 1fr; }
+    .footer { margin-top: 2rem; }
+  }
+
+  @media print {
+    body { overflow: visible; background: #fff; }
+    .controls { display: none; }
+    .deck { display: block; height: auto; }
+    .slide,
+    .slide.active {
+      display: block;
+      width: 100%;
+      height: auto;
+      box-shadow: none;
+      border: 0;
+      page-break-after: always;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="controls" aria-label="Presentation controls">
+  <button type="button" id="prevBtn">Prev</button>
+  <button type="button" id="nextBtn">Next</button>
+</div>
+
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Enlarged figure">
+  <button type="button" class="lightbox-close" id="lightboxClose" aria-label="Close">&times;</button>
+  <img class="lightbox-img" id="lightboxImg" alt="">
+</div>
+
+<main class="deck" aria-live="polite">
+  <section class="slide title-slide active">
+    <div>
+      <div class="section">SABP — student presentation</div>
+      <h1>Statistical analysis of single-cell RNA-seq in <i>Dictyostelium</i> development</h1>
+      <p class="subtitle">Worked example: quantifying developmental synchronicity — from raw cells to replicate-level hypothesis tests.</p>
+    </div>
+    <div></div>
+    <div class="footer">
+      <span>Lena Trnovec</span>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-header">
+      <div>
+        <div class="section">1. Biological system</div>
+        <h2>Why <i>Dictyostelium</i>?</h2>
+      </div>
+      <div>02 / 06</div>
+    </div>
+    <div class="content">
+      <div class="panel">
+        <p class="lead">A timed developmental program with matched mutant controls — a clean setup for statistics.</p>
+        <ul class="bullets">
+          <li>Starvation triggers a ~20-hour developmental program; sampling at fixed intervals gives temporal snapshots.</li>
+          <li>cAMP pulses coordinate aggregation; later cells split into prespore and prestalk fates.</li>
+          <li>Two mutants disrupt cAMP signaling — one blocks development entirely, one develops without pulses.</li>
+          <li>Matched genetic perturbation gives a mechanistically motivated control group, not just a larger sample.</li>
+        </ul>
+      </div>
+      <figure class="figure-card">
+        <img src="assets/dicty_presentation/development.png" alt="Dictyostelium developmental lifecycle">
+        <figcaption>Lifecycle overview: stages sampled at 0, 4, 8, 12, 16, 20 h after starvation.</figcaption>
+      </figure>
+    </div>
+    <div class="footer"><span></span><span>02 / 06</span></div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-header">
+      <div>
+        <div class="section">2. Dataset</div>
+        <h2>Single-cell time course</h2>
+      </div>
+      <div>03 / 06</div>
+    </div>
+    <div class="content">
+      <div class="panel">
+        <p class="lead">Gene-expression matrix plus replication structure — the statistics depend on both.</p>
+        <ul class="bullets">
+          <li>~30,000 cells total; rows = cells, columns = genes, entries = transcript counts.</li>
+          <li>Sampled at 0, 4, 8, 12, 16, 20 h after starvation, for three strains (AX4, acaA⁻, acaA⁻pkaC<sup>OE</sup>).</li>
+          <li>Three to four independent biological replicates per strain × time point — separate cultures, each tagged with a distinct fluorescent protein (GFP / mCerulean / mCherry / mNeonGreen) and pooled only at sequencing.</li>
+          <li>30,000 cells ≠ 30,000 independent observations — the replicate count is what carries the inference (see slide 5).</li>
+        </ul>
+      </div>
+      <figure class="figure-card figure-stack">
+        <img src="assets/dicty_presentation/scRNA_data.png" alt="scRNA-seq expression matrix structure">
+        <img src="assets/dicty_presentation/gene_expression_over_time.png" alt="Example genes changing over developmental time">
+        <figcaption>Matrix view and example genes changing over time.</figcaption>
+      </figure>
+    </div>
+    <div class="footer"><span></span><span>03 / 06</span></div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-header">
+      <div>
+        <div class="section">3. The pattern in the data</div>
+        <h2>What the data show: UMAPs</h2>
+      </div>
+      <div>04 / 06</div>
+    </div>
+    <div class="content">
+      <div class="panel">
+        <p class="lead">Each dot is one cell; similar cells sit close together on the map.</p>
+        <ul class="bullets">
+          <li>Wild-type by time: two clusters — early (0–4 h) and later stages — with a clean temporal path between them.</li>
+          <li>Wild-type by cell type: the later cluster splits into two fates, prespore and prestalk.</li>
+          <li>acaA⁻ (no cAMP signaling): cells are stuck in the early region — development never starts.</li>
+          <li>acaA⁻pkaC<sup>OE</sup> (develops without cAMP pulses): cells do reach the later stages, but time points are mixed — development happens, but without synchronicity.</li>
+          <li>Next: how we turn this visual pattern into a replicate-level statistical test.</li>
+        </ul>
+      </div>
+      <figure class="figure-card">
+        <img src="assets/dicty_presentation/umaps.png" alt="UMAP plots of wild-type and cAMP mutants colored by time and cell type">
+        <figcaption>UMAP: a 2D summary where each dot is one cell and nearby dots have similar gene expression.</figcaption>
+      </figure>
+    </div>
+    <div class="footer"><span></span><span>04 / 06</span></div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-header">
+      <div>
+        <div class="section">4. Statistical reasoning</div>
+        <h2>Hypotheses, assumptions, choice of test</h2>
+      </div>
+      <div>05 / 06</div>
+    </div>
+    <div class="content">
+      <div class="panel" style="gap:.55rem">
+        <div class="box" style="min-height:0; background:#eef4ff; gap:.15rem;">
+          <strong>Worked example: AX4 vs acaA⁻ at 8 h</strong>
+          <span><b>H₀:</b> mean synchronicity equal. <b>Hₐ:</b> strains differ — cAMP signaling matters.</span>
+        </div>
+        <div class="box" style="min-height:0; gap:.15rem;">
+          <strong>1. Independence</strong>
+          <span>Cells from one culture are not independent — treating them so is <b>pseudo-replication</b>. Aggregate to one value per biological replicate → n = 3, not 5,000.</span>
+        </div>
+        <div class="box" style="min-height:0; gap:.15rem;">
+          <strong>2. 95% CI by non-parametric bootstrap</strong>
+          <span>σ unknown (no z-interval); 3 replicates ⟹ normality unverifiable (t-interval risky). Resample 10,000× ; take 2.5th–97.5th percentiles.</span>
+        </div>
+        <div class="box" style="min-height:0; gap:.15rem;">
+          <strong>3. Replicate-level <i>t</i>-test (Welch)</strong>
+          <span>Continuous outcome (not χ²); pairwise comparison (ANOVA not needed); σ unknown (not z). Welch handles unequal variances.</span>
+        </div>
+      </div>
+      <figure class="figure-card">
+        <img src="assets/dicty_presentation/synchronicity_plot.png" alt="Synchronicity over time for AX4 and mutants with bootstrap CIs">
+        <figcaption>Faded points = replicates; dark line = mean; band = 95% bootstrap CI. Non-overlapping bands from 8 h onward reject H₀. <b>Significance ≠ importance</b> — on the 0–1 scale, the CI gap itself is the effect size.</figcaption>
+      </figure>
+    </div>
+    <div class="footer"><span></span><span>05 / 06</span></div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-header">
+      <div>
+        <div class="section">5. Where this is heading</div>
+        <h2>Predicting transcription factors with AI</h2>
+      </div>
+      <div>06 / 06</div>
+    </div>
+    <div class="content">
+      <div class="panel">
+        <p class="lead">Once synchronicity is established, the next question is which transcription factors drive the split into prespore and prestalk fates.</p>
+        <ul class="bullets">
+          <li>Use <b>AI models</b> — foundation models trained on large single-cell collections, together with network-based approaches — to <i>predict</i> candidate transcription factors.</li>
+          <li>Models bring in biological context that a single dataset cannot provide on its own.</li>
+          <li>Output is a <b>prioritized shortlist of hypotheses</b>, not a definitive list of hits — the lab is what turns a candidate into a finding.</li>
+          <li><i>Early stages — open to suggestions on models, methods, and pitfalls to watch for.</i></li>
+        </ul>
+      </div>
+      <figure class="figure-card">
+        <img src="assets/dicty_presentation/lineage_fate_probabilities.png" alt="Fate probabilities for prestalk and prespore">
+        <figcaption>Each cell is assigned a probability of reaching the prestalk or prespore fate.</figcaption>
+      </figure>
+    </div>
+    <div class="footer"><span></span><span>06 / 06</span></div>
+  </section>
+</main>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  let current = 0;
+
+  function showSlide(index) {
+    current = Math.max(0, Math.min(slides.length - 1, index));
+    slides.forEach((slide, idx) => slide.classList.toggle('active', idx === current));
+  }
+
+  function nextSlide() { showSlide(current + 1); }
+  function prevSlide() { showSlide(current - 1); }
+
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImg = document.getElementById('lightboxImg');
+  const lightboxClose = document.getElementById('lightboxClose');
+
+  function openLightbox(src, alt) {
+    lightboxImg.src = src;
+    lightboxImg.alt = alt || '';
+    lightbox.classList.add('open');
+  }
+
+  function closeLightbox() {
+    lightbox.classList.remove('open');
+    lightboxImg.src = '';
+  }
+
+  document.querySelectorAll('.slide img').forEach((img) => {
+    if (img.classList.contains('lightbox-img')) return;
+    img.addEventListener('click', () => openLightbox(img.src, img.alt));
+  });
+
+  lightbox.addEventListener('click', (event) => {
+    if (event.target === lightbox || event.target === lightboxImg) {
+      closeLightbox();
+    }
+  });
+
+  lightboxClose.addEventListener('click', closeLightbox);
+
+  document.addEventListener('keydown', (event) => {
+    if (lightbox.classList.contains('open')) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeLightbox();
+      }
+      return;
+    }
+    if (event.key === 'ArrowRight' || event.key === 'PageDown' || event.key === ' ') {
+      event.preventDefault();
+      nextSlide();
+    }
+    if (event.key === 'ArrowLeft' || event.key === 'PageUp') {
+      event.preventDefault();
+      prevSlide();
+    }
+    if (event.key === 'Home') showSlide(0);
+    if (event.key === 'End') showSlide(slides.length - 1);
+  });
+
+  prevBtn.addEventListener('click', prevSlide);
+  nextBtn.addEventListener('click', nextSlide);
+  showSlide(0);
+</script>
+</body>
+</html>

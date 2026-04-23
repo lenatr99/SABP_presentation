@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Statistična analiza enoceličnih transkriptomskih podatkov pri razvoju vrste Dictyostelium</title>
+<style>
+  :root {
+    --ink: #ffffff;
+    --muted: #d6e4ff;
+    --line: rgba(47, 66, 96, .12);
+    --heading: #ffffff;
+    --section-color: #ffe27a;
+    --accent: #2f6fe0;
+    --accent-dark: #1b3f82;
+    --card-text: #1b2a44;
+    --card-muted: #425878;
+    --bg: #6680a6;
+    --stroke: #34486a;
+    --card-bg: rgba(255, 255, 255, .96);
+    --control-bg: rgba(247, 250, 255, .92);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+  }
+
+  body { overflow: hidden; }
+
+  .deck {
+    width: 100vw;
+    height: 100vh;
+    display: grid;
+    place-items: center;
+  }
+
+  .slide {
+    --fit-scale: 1;
+    display: none;
+    width: min(100vw, 177.78vh);
+    height: min(56.25vw, 100vh);
+    background:
+      linear-gradient(rgba(40, 58, 88, .28), rgba(40, 58, 88, .38)),
+      url("assets/dicty_presentation/dicty_image.png") center center / cover no-repeat;
+    padding: 4.2vh 5vw 3.2vh;
+    border: 1px solid rgba(232, 239, 249, .24);
+    box-shadow: 0 14px 40px rgba(21, 34, 53, .24);
+    overflow: hidden;
+  }
+
+  .slide.active {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: calc(2.2vh * var(--fit-scale));
+  }
+
+  /* Heading stroke keeps titles readable over the image. */
+  .slide-header .section,
+  .slide-header h1,
+  .slide-header h2,
+  .title-slide h1,
+  .title-slide .section,
+  .title-slide .subtitle,
+  .slide-header > div:last-child,
+  .footer {
+    text-shadow:
+      -2px -2px 0 var(--stroke),
+      0 -2px 0 var(--stroke),
+      2px -2px 0 var(--stroke),
+      -2px 0 0 var(--stroke),
+      2px 0 0 var(--stroke),
+      -2px 2px 0 var(--stroke),
+      0 2px 0 var(--stroke),
+      2px 2px 0 var(--stroke),
+      0 6px 18px rgba(15, 25, 45, .45);
+  }
+
+  .title-slide {
+    align-content: center;
+  }
+
+  .slide-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: calc(1.5rem * var(--fit-scale));
+    border-bottom: 3px solid var(--section-color);
+    padding-bottom: calc(1.3vh * var(--fit-scale));
+  }
+
+  .section {
+    color: var(--section-color);
+    font-size: clamp(calc(.62rem * var(--fit-scale)), calc(1.1vw * var(--fit-scale)), calc(.95rem * var(--fit-scale)));
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: calc(.35rem * var(--fit-scale));
+  }
+
+  h1, h2 {
+    margin: 0;
+    color: var(--heading);
+    letter-spacing: 0;
+    line-height: 1.08;
+  }
+
+  h1 {
+    font-size: clamp(calc(2rem * var(--fit-scale)), calc(5.4vw * var(--fit-scale)), calc(4.2rem * var(--fit-scale)));
+    max-width: 25ch;
+  }
+
+  h2 {
+    font-size: clamp(calc(1.6rem * var(--fit-scale)), calc(3.7vw * var(--fit-scale)), calc(3.6rem * var(--fit-scale)));
+  }
+
+  .subtitle {
+    margin: calc(1.5rem * var(--fit-scale)) 0 0;
+    max-width: 52rem;
+    font-size: clamp(calc(1rem * var(--fit-scale)), calc(1.7vw * var(--fit-scale)), calc(1.75rem * var(--fit-scale)));
+    line-height: 1.35;
+    color: #ffffff;
+  }
+
+  .content {
+    display: grid;
+    grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr);
+    gap: calc(2.4vw * var(--fit-scale));
+    align-items: center;
+    min-height: 0;
+  }
+
+  .content.text-only {
+    display: block;
+    max-width: 74rem;
+    margin-top: calc(2vh * var(--fit-scale));
+  }
+
+  .content.text-only.wide {
+    max-width: none;
+  }
+
+  .compact-top-box {
+    max-width: 52rem;
+    margin: 0 0 calc(1rem * var(--fit-scale));
+    padding:
+      clamp(calc(.8rem * var(--fit-scale)), calc(1.3vw * var(--fit-scale)), calc(1.1rem * var(--fit-scale)))
+      clamp(calc(1rem * var(--fit-scale)), calc(1.5vw * var(--fit-scale)), calc(1.35rem * var(--fit-scale)));
+  }
+
+  /* White rounded card shared by body content. */
+  .panel {
+    background: var(--card-bg);
+    color: var(--card-text);
+    border-radius: 22px;
+    padding:
+      clamp(calc(.95rem * var(--fit-scale)), calc(1.8vw * var(--fit-scale)), calc(1.8rem * var(--fit-scale)))
+      clamp(calc(1.05rem * var(--fit-scale)), calc(2.1vw * var(--fit-scale)), calc(2.1rem * var(--fit-scale)));
+    box-shadow:
+      0 18px 40px rgba(15, 25, 45, .28),
+      0 2px 6px rgba(15, 25, 45, .14);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: calc(.3rem * var(--fit-scale));
+    min-width: 0;
+  }
+
+  .bullets {
+    margin: 0;
+    padding-left: 1.25em;
+    font-size: clamp(calc(.88rem * var(--fit-scale)), calc(1.4vw * var(--fit-scale)), calc(1.4rem * var(--fit-scale)));
+    line-height: 1.4;
+    color: var(--card-text);
+  }
+
+  .bullets li { margin: calc(.55em * var(--fit-scale)) 0; }
+  .bullets li::marker { color: var(--accent); }
+
+  .lead {
+    margin: 0 0 .6rem;
+    font-size: clamp(calc(1.02rem * var(--fit-scale)), calc(1.75vw * var(--fit-scale)), calc(1.85rem * var(--fit-scale)));
+    line-height: 1.25;
+    color: var(--accent-dark);
+    font-weight: 700;
+  }
+
+  figure {
+    margin: 0;
+    min-height: 0;
+  }
+
+  .figure-card {
+    background: var(--card-bg);
+    border-radius: 22px;
+    padding: calc(1rem * var(--fit-scale)) calc(1.1rem * var(--fit-scale)) calc(.9rem * var(--fit-scale));
+    box-shadow:
+      0 18px 40px rgba(15, 25, 45, .28),
+      0 2px 6px rgba(15, 25, 45, .14);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;
+    min-height: 0;
+  }
+
+  .figure-stack {
+    display: flex;
+    flex-direction: column;
+    gap: calc(.6rem * var(--fit-scale));
+  }
+
+  .figure-stack img {
+    max-height: calc(22vh * var(--fit-scale));
+  }
+
+  img {
+    display: block;
+    max-width: 100%;
+    max-height: calc(52vh * var(--fit-scale));
+    object-fit: contain;
+    margin: 0 auto;
+  }
+
+  figcaption {
+    margin-top: calc(.6rem * var(--fit-scale));
+    font-size: clamp(calc(.72rem * var(--fit-scale)), calc(.95vw * var(--fit-scale)), calc(.95rem * var(--fit-scale)));
+    line-height: 1.3;
+    color: var(--card-muted);
+    text-align: center;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: calc(1.1rem * var(--fit-scale));
+    margin-top: calc(1.4rem * var(--fit-scale));
+  }
+
+  .bottom-figures {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: calc(1.2rem * var(--fit-scale));
+    margin-top: calc(1.3rem * var(--fit-scale));
+    align-items: stretch;
+  }
+
+  .bottom-figures .figure-card {
+    padding: calc(.8rem * var(--fit-scale)) calc(.9rem * var(--fit-scale)) calc(.7rem * var(--fit-scale));
+  }
+
+  .bottom-figures img {
+    max-height: calc(18vh * var(--fit-scale));
+  }
+
+  .bottom-figures.tall img {
+    max-height: calc(23vh * var(--fit-scale));
+  }
+
+  .bottom-figures.tall .figure-card {
+    padding: calc(.7rem * var(--fit-scale)) calc(.85rem * var(--fit-scale)) calc(.65rem * var(--fit-scale));
+  }
+
+  .content.stats-layout {
+    display: flex;
+    flex-direction: column;
+    gap: calc(1rem * var(--fit-scale));
+    margin-top: calc(1vh * var(--fit-scale));
+    min-height: 0;
+  }
+
+  .content.stats-layout .stats-grid {
+    margin-top: 0;
+  }
+
+  .content.stats-layout .bottom-figures {
+    margin-top: 0;
+  }
+
+  .box {
+    background: var(--card-bg);
+    border-radius: 18px;
+    padding: calc(.95rem * var(--fit-scale)) calc(1.1rem * var(--fit-scale));
+    min-height: 7.5rem;
+    box-shadow:
+      0 14px 32px rgba(15, 25, 45, .24),
+      0 2px 6px rgba(15, 25, 45, .12);
+    color: var(--card-text);
+    display: flex;
+    flex-direction: column;
+    gap: calc(.3rem * var(--fit-scale));
+  }
+
+  .box strong {
+    display: block;
+    color: var(--accent-dark);
+    font-size: clamp(calc(.9rem * var(--fit-scale)), calc(1.3vw * var(--fit-scale)), calc(1.25rem * var(--fit-scale)));
+    margin-bottom: calc(.1rem * var(--fit-scale));
+  }
+
+  .box span {
+    color: var(--card-text);
+    font-size: clamp(calc(.82rem * var(--fit-scale)), calc(1.05vw * var(--fit-scale)), calc(1.02rem * var(--fit-scale)));
+    line-height: 1.35;
+  }
+
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #ffffff;
+    font-size: calc(.9rem * var(--fit-scale));
+    opacity: .9;
+  }
+
+  .slide-header > div:last-child {
+    color: #ffffff;
+    font-weight: 600;
+    opacity: .9;
+    white-space: nowrap;
+  }
+
+  .slide img:not(.lightbox-img) {
+    cursor: zoom-in;
+    transition: transform .15s ease;
+  }
+
+  .slide img:not(.lightbox-img):hover {
+    transform: scale(1.015);
+  }
+
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(12, 20, 36, .88);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    padding: 3vh 3vw;
+    cursor: zoom-out;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+
+  .lightbox.open {
+    display: flex;
+    animation: lightbox-fade .18s ease;
+  }
+
+  @keyframes lightbox-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .lightbox-img {
+    max-width: 94vw;
+    max-height: 92vh;
+    object-fit: contain;
+    border-radius: 12px;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, .55);
+    background: #ffffff;
+    padding: .6rem;
+    animation: lightbox-zoom .22s ease;
+  }
+
+  @keyframes lightbox-zoom {
+    from { transform: scale(.92); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .lightbox-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(255, 255, 255, .14);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, .28);
+    border-radius: 999px;
+    width: 2.4rem;
+    height: 2.4rem;
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .lightbox-close:hover { background: rgba(255, 255, 255, .22); }
+
+  .controls {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 20;
+    display: flex;
+    gap: .45rem;
+  }
+
+  button {
+    border: 1px solid rgba(232, 239, 249, .34);
+    background: var(--control-bg);
+    color: #365178;
+    border-radius: 4px;
+    padding: calc(.45rem * var(--fit-scale)) calc(.7rem * var(--fit-scale));
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  @media (max-width: 860px) {
+    body { overflow: auto; }
+    .deck { display: block; height: auto; }
+    .slide {
+      overflow: visible;
+      width: 100%;
+      height: auto;
+      min-height: 100vh;
+      padding: 4rem 1.2rem 2rem;
+      border: 0;
+    }
+    .slide.active { display: block; }
+    .content { grid-template-columns: 1fr; }
+    img { max-height: none; }
+    .stats-grid { grid-template-columns: 1fr; }
+    .bottom-figures { grid-template-columns: 1fr; }
+    .footer { margin-top: 2rem; }
+  }
+
+  @media print {
+    body { overflow: visible; background: #fff; }
+    .controls { display: none; }
+    .deck { display: block; height: auto; }
+    .slide,
+    .slide.active {
+      overflow: visible;
+      display: block;
+      width: 100%;
+      height: auto;
+      box-shadow: none;
+      border: 0;
+      page-break-after: always;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="controls" aria-label="Presentation controls">
+  <button type="button" id="prevBtn">Nazaj</button>
+  <button type="button" id="nextBtn">Naprej</button>
+</div>
+
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Povečana slika">
+  <button type="button" class="lightbox-close" id="lightboxClose" aria-label="Zapri">&times;</button>
+  <img class="lightbox-img" id="lightboxImg" alt="">
+</div>
+
+<main class="deck" aria-live="polite">
+  <section class="slide title-slide active">
+    <div>
+      <div class="section">Statistična analiza bioloških podatkov</div>
+      <h1>Statistična analiza enoceličnih transkriptomskih podatkov pri razvoju vrste <i>Dictyostelium</i></h1>
+      <p class="subtitle">Primer: kvantifikacija razvojne sinhronosti od posameznih celic do preverjanja hipotez na ravni bioloških replik.</p>
+    </div>
+    <div></div>
+    <div class="footer">
+      <span>Lena Trnovec</span>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-header">
+      <div>
+        <div class="section">1. Moja vloga</div>
+        <h2>Računska analiza eksperimentalnih podatkov</h2>
+      </div>
+      <div>02 / 07</div>
+    </div>
+    <div class="content text-only">
+      <div class="panel">
+        <p class="lead">V projektu pokrivam računski del analize: od priprave podatkov do statističnega sklepanja.</p>
+        <ul class="bullets">
+          <li>Po izobrazbi sem biokemičarka, nato pa sem se usmerila v računalništvo in bioinformatiko.</li>
+          <li>Laboratorijski del izvajajo partnerji; moj del je analiza enoceličnih transkriptomskih podatkov.</li>
+          <li>S sodelavci iz Baylor College of Medicine sodelujemo približno tri leta.</li>
+          <li>Doktorski cilj: od sinhronosti razvoja do celičnih linij in kandidatov za transkripcijske faktorje.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer"><span></span><span>02 / 07</span></div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-header">
+      <div>
+        <div class="section">2. Biološki sistem</div>
+        <h2>Zakaj <i>Dictyostelium</i>?</h2>
+      </div>
+      <div>03 / 07</div>
+    </div>
+    <div class="content">
+      <div class="panel">
+        <p class="lead">Časovno opredeljen razvojni program z ustreznimi mutantnimi kontrolami je jasna osnova za statistično analizo.</p>
+        <ul class="bullets">
+          <li>Stradanje sproži približno 20-urni razvojni program; vzorčenje v fiksnih intervalih daje časovne posnetke razvoja.</li>
+          <li>cAMP pulzi usklajujejo agregacijo; pozneje se celice razcepijo v predsporno in predbetno usodo.</li>
+          <li>Dva mutanta porušita cAMP signalizacijo — eden razvoj povsem ustavi, drugi se razvija brez pulzov.</li>
+          <li>Takšna genska perturbacija nam da mehanistično utemeljeno kontrolno skupino, ne zgolj večjega vzorca.</li>
+        </ul>
+      </div>
+      <figure class="figure-card">
+        <img src="assets/dicty_presentation/development.png" alt="Dictyostelium developmental lifecycle">
+        <figcaption>Pregled življenjskega cikla: stopnje so vzorčene pri 0, 4, 8, 12, 16 in 20 urah po stradanju.</figcaption>
+      </figure>
+    </div>
+    <div class="footer"><span></span><span>03 / 07</span></div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-header">
+      <div>
+        <div class="section">3. Podatkovni nabor</div>
+        <h2>Enocelični časovni niz</h2>
+      </div>
+      <div>04 / 07</div>
+    </div>
+    <div class="content">
+      <div class="panel">
+        <p class="lead">Matrika genskega izražanja in struktura replikacije sta enako pomembni za statistične sklepe.</p>
+        <ul class="bullets">
+          <li>Skupno približno 30.000 celic; vrstice predstavljajo celice, stolpci gene, vnosi pa število transkriptov.</li>
+          <li>Vzorčeno pri 0, 4, 8, 12, 16 in 20 urah po stradanju za tri seve (AX4, acaA⁻, acaA⁻pkaC<sup>OE</sup>).</li>
+          <li>Tri do štiri neodvisne biološke replike za vsako kombinacijo seva in časovne točke: ločene kulture, vsaka označena z drugim fluorescenčnim proteinom (GFP / mCerulean / mCherry / mNeonGreen), združene šele tik pred sekvenciranjem.</li>
+          <li>30.000 celic ≠ 30.000 neodvisnih opazovanj — za sklepanje je ključno število bioloških replik (glej diapozitiv 5).</li>
+        </ul>
+      </div>
+      <figure class="figure-card figure-stack">
+        <img src="assets/dicty_presentation/scRNA_data.png" alt="scRNA-seq expression matrix structure">
+        <img src="assets/dicty_presentation/gene_expression_over_time.png" alt="Example genes changing over developmental time">
+        <figcaption>Pogled matrike in primeri genov, ki se skozi čas spreminjajo.</figcaption>
+      </figure>
+    </div>
+    <div class="footer"><span></span><span>04 / 07</span></div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-header">
+      <div>
+        <div class="section">4. Vzorec v podatkih</div>
+        <h2>Kaj pokažejo podatki: UMAP</h2>
+      </div>
+      <div>05 / 07</div>
+    </div>
+    <div class="content">
+      <div class="panel">
+        <p class="lead">Vsaka točka predstavlja eno celico; podobne celice na zemljevidu ležijo blizu druga drugi.</p>
+        <ul class="bullets">
+          <li>Divji tip po času: dva grozda — zgodnji (0–4 h) in poznejše stopnje — z jasno časovno potjo med njima.</li>
+          <li>Divji tip po tipu celic: poznejši grozd se razcepi v dve usodi, predsporno in predbetno.</li>
+          <li>acaA⁻ (brez cAMP signalizacije): celice ostanejo v zgodnjem območju — razvoj se ne začne.</li>
+          <li>acaA⁻pkaC<sup>OE</sup> (razvoj brez cAMP pulzov): celice dosežejo poznejše stopnje, vendar so časovne točke premešane — razvoj poteka, a brez sinhronosti.</li>
+          <li>Naslednji korak je vprašanje, kako ta vizualni vzorec pretvorimo v statistični test na ravni bioloških replik.</li>
+        </ul>
+      </div>
+      <figure class="figure-card">
+        <img src="assets/dicty_presentation/umaps.png" alt="UMAP plots of wild-type and cAMP mutants colored by time and cell type">
+        <figcaption>UMAP: dvorazsežni povzetek, kjer vsaka točka predstavlja eno celico, bližnje točke pa imajo podobno gensko izražanje.</figcaption>
+      </figure>
+    </div>
+    <div class="footer"><span></span><span>05 / 07</span></div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-header">
+      <div>
+        <div class="section">5. Statistična presoja</div>
+        <h2>Hipoteze, predpostavke, izbira testa</h2>
+      </div>
+      <div>06 / 07</div>
+    </div>
+    <div class="content">
+      <div class="panel" style="gap:.55rem">
+        <div class="box" style="min-height:0; background:#eef4ff; gap:.15rem;">
+          <strong>Delovni primer: AX4 proti acaA⁻ pri 8 h</strong>
+          <span><b>H₀:</b> povprečna sinhronost je v obeh sevih enaka. <b>Hₐ:</b> seva se razlikujeta — cAMP signalizacija je pomembna.</span>
+        </div>
+        <div class="box" style="min-height:0; gap:.15rem;">
+          <strong>1. Neodvisnost</strong>
+          <span>Celice iz iste kulture niso neodvisne — če jih obravnavamo kot neodvisne, dobimo <b>psevdoreplikacijo</b>. Zato agregiramo na eno vrednost na biološko repliko -&gt; n = 3, ne 5.000.</span>
+        </div>
+        <div class="box" style="min-height:0; gap:.15rem;">
+          <strong>2. 95-% interval zaupanja z neparametričnim bootstrapom</strong>
+          <span>σ je neznan, zato ne uporabimo z-intervala; pri treh replikah normalnosti ne moremo zanesljivo preveriti, zato je t-interval tvegan. Vzorčimo s ponavljanjem 10.000-krat in vzamemo 2,5. ter 97,5. percentil.</span>
+        </div>
+        <div class="box" style="min-height:0; gap:.15rem;">
+          <strong>3. <i>t</i>-test na ravni replik (Welch)</strong>
+          <span>Izid je zvezna spremenljivka (ne χ²); primerjamo dve skupini (ANOVA ni potrebna); σ je neznan (ne z-test). Welchov t-test upošteva neenake variance.</span>
+        </div>
+      </div>
+      <figure class="figure-card">
+        <img src="assets/dicty_presentation/synchronicity_plot.png" alt="Synchronicity over time for AX4 and mutants with bootstrap CIs">
+        <figcaption>Svetlejše točke predstavljajo replike; temna črta je povprečje; pas prikazuje 95-% bootstrap interval zaupanja. Ko se pasovi od 8 h naprej ne prekrivajo, H₀ ovržemo. <b>Statistična značilnost ≠ velikost učinka</b> — na skali od 0 do 1 je razmik med intervali neposreden pokazatelj velikosti učinka.</figcaption>
+      </figure>
+    </div>
+    <div class="footer"><span></span><span>06 / 07</span></div>
+  </section>
+
+  <section class="slide">
+    <div class="slide-header">
+      <div>
+        <div class="section">6. Smer naprej</div>
+        <h2>Od sinhronosti do novih bioloških hipotez</h2>
+      </div>
+      <div>07 / 07</div>
+    </div>
+    <div class="content text-only">
+      <div class="stats-grid">
+        <div class="box"><strong>Izhodišče</strong><span>Primer sinhronosti pri 8 urah pokaže, kako iz enoceličnih podatkov pridemo do sklepanja na ravni bioloških replik. V doktoratu želim isti okvir uporabiti tudi pri drugih vidikih razvoja.</span></div>
+        <div class="box"><strong>Naslednji korak</strong><span>Modele umetne inteligence želim uporabiti za napoved kandidatnih transkripcijskih faktorjev, ki bi lahko usmerjali razvojne prehode med celičnimi usodami.</span></div>
+        <div class="box"><strong>Končni cilj</strong><span>Rezultat je prednostno razvrščen nabor bioloških hipotez, ki jih lahko sodelavci nato preverijo v laboratoriju.</span></div>
+      </div>
+    </div>
+    <div class="footer"><span></span><span>07 / 07</span></div>
+  </section>
+</main>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  let current = 0;
+  let fitFrame = null;
+
+  function fitSlide(slide) {
+    if (!slide || !slide.classList.contains('active')) return;
+    slide.style.setProperty('--fit-scale', '1');
+
+    let scale = 1;
+    let attempts = 0;
+    const minScale = 0.72;
+
+    while (
+      attempts < 20 &&
+      scale > minScale &&
+      (slide.scrollHeight > slide.clientHeight || slide.scrollWidth > slide.clientWidth)
+    ) {
+      scale = Math.max(minScale, +(scale - 0.03).toFixed(2));
+      slide.style.setProperty('--fit-scale', String(scale));
+      attempts += 1;
+    }
+  }
+
+  function scheduleFit() {
+    if (fitFrame) cancelAnimationFrame(fitFrame);
+    fitFrame = requestAnimationFrame(() => fitSlide(slides[current]));
+  }
+
+  function showSlide(index) {
+    current = Math.max(0, Math.min(slides.length - 1, index));
+    slides.forEach((slide, idx) => slide.classList.toggle('active', idx === current));
+    scheduleFit();
+  }
+
+  function nextSlide() { showSlide(current + 1); }
+  function prevSlide() { showSlide(current - 1); }
+
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImg = document.getElementById('lightboxImg');
+  const lightboxClose = document.getElementById('lightboxClose');
+
+  function openLightbox(src, alt) {
+    lightboxImg.src = src;
+    lightboxImg.alt = alt || '';
+    lightbox.classList.add('open');
+  }
+
+  function closeLightbox() {
+    lightbox.classList.remove('open');
+    lightboxImg.src = '';
+  }
+
+  document.querySelectorAll('.slide img').forEach((img) => {
+    if (img.classList.contains('lightbox-img')) return;
+    img.addEventListener('click', () => openLightbox(img.src, img.alt));
+    if (!img.complete) img.addEventListener('load', scheduleFit);
+  });
+
+  lightbox.addEventListener('click', (event) => {
+    if (event.target === lightbox || event.target === lightboxImg) {
+      closeLightbox();
+    }
+  });
+
+  lightboxClose.addEventListener('click', closeLightbox);
+
+  document.addEventListener('keydown', (event) => {
+    if (lightbox.classList.contains('open')) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeLightbox();
+      }
+      return;
+    }
+    if (event.key === 'ArrowRight' || event.key === 'PageDown' || event.key === ' ') {
+      event.preventDefault();
+      nextSlide();
+    }
+    if (event.key === 'ArrowLeft' || event.key === 'PageUp') {
+      event.preventDefault();
+      prevSlide();
+    }
+    if (event.key === 'Home') showSlide(0);
+    if (event.key === 'End') showSlide(slides.length - 1);
+  });
+
+  prevBtn.addEventListener('click', prevSlide);
+  nextBtn.addEventListener('click', nextSlide);
+  window.addEventListener('resize', scheduleFit);
+  window.addEventListener('load', scheduleFit);
+  if (document.fonts?.ready) document.fonts.ready.then(scheduleFit);
+  showSlide(0);
+</script>
+</body>
+</html>

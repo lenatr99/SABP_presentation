@@ -1,0 +1,60 @@
+Statistical analysis of single-cell RNA-seq in *Dictyostelium* development
+Speaker text for a 6-slide presentation
+
+
+Slide 1: Title
+Hi, I am Lena. I am a PhD student in Blaž Zupan's bioinformatics lab. My background is a bit mixed — bachelor's in biochemistry, master's in computer science, and now I am continuing on the computational side for my PhD. So I do not do any wet-lab work myself — the cells, the cultures, the sequencing experiments all happen at Baylor College of Medicine in Houston. We have been collaborating with them for about three years. My part is the analysis: I take the single-cell RNA-seq data they generate, decide how to process it, run the statistics, and interpret the results together with them.
+
+I picked this topic because the synchronicity analysis is one of the results we recently published, and it happens to be a good example of the kinds of statistical choices that come up in single-cell data. So the plan today is: a bit of biology, then the dataset, then what the data look like, then the actual hypothesis test, and finally where my PhD is heading next.
+
+
+Slide 2: Why *Dictyostelium*?
+A bit of biology first. *Dictyostelium discoideum* is a social amoeba. Normally it lives as single cells in the soil, eating bacteria. But when food runs out, the cells do something unusual — they switch from being solitary to being multicellular. They start sending each other pulses of cAMP, aggregate into a mound, and over the next twenty hours or so they differentiate into two types: prespore cells, which end up as spores, and prestalk cells, which form the stalk that holds the spore mass up.
+
+There are two things that make this nice for the kind of analysis I do. First, it is timed — we sample cells at 0, 4, 8, 12, 16, and 20 hours after starvation, so time is an actual variable in the design. Second, there are two mutant strains that break cAMP signaling in different ways. One is acaA-minus, which cannot produce cAMP pulses at all and never develops. The other is acaA-pkaC-overexpression, which also cannot produce cAMP pulses, but has an extra trick: overexpressing PKA lets it develop anyway. So we have a control group that is mechanistically motivated, not just a bigger sample.
+
+
+Slide 3: Single-cell time course
+This is what the data actually look like. A big table — roughly 30,000 rows, one per cell, and thousands of columns, one per gene. The entries are transcript counts, how many RNA molecules of each gene were detected in each cell. Each cell also has metadata: time point, strain, and which biological replicate it came from. The line plot is just an example of what the numbers mean — if you pick a few genes you can watch them switch on and off in waves as development progresses.
+
+The important thing about this dataset, and it will come back in a couple of slides, is that 30,000 cells is not 30,000 independent observations. Many of those cells come from the same culture, prepared on the same day, in the same flask. So the Baylor group set this up carefully. They grew each replicate culture separately, and tagged each one with a different fluorescent protein — GFP, mCerulean, mCherry, or mNeonGreen. The tagged cultures were pooled only at the very end, right before sequencing. During analysis, every cell still carries its tag, so we can always tell which independent culture it came from. That gives us three or four independent replicates per strain per time point, and that is the number that actually matters for the statistics.
+
+
+Slide 4: What the data show — UMAPs
+Before doing any statistics, this is what the data look like when we project them into two dimensions. These are UMAPs — think of them as flattened 2D maps where each dot is one cell, and cells with similar gene expression are drawn close together. It is just a way to compress thousands of genes per cell into something you can actually look at.
+
+Top-left: wild-type cells coloured by time. Two clusters — the small one on the right is the unicellular stage, 0 and 4 hours, and the big one on the left is everything from 8 hours onward. Within the big cluster, the colours progress smoothly from early to late, which is what coordinated development looks like.
+
+Top-right: same wild-type cells, coloured by cell type. That later cluster splits into two lobes — prespore on one side, prestalk on the other.
+
+Bottom-left: the acaA-minus mutant. Almost all the cells are stuck in the early, unicellular region. Without cAMP signaling, development does not start.
+
+Bottom-right: the acaA-pkaC-overexpression mutant. This one is the interesting case, because these cells do develop into prespore and prestalk even without cAMP pulses. They do reach both clusters. But look at the colours — the time points are all mixed up. At any given time, cells are spread across stages that in wild-type are cleanly separated. Development happens, but without synchronicity.
+
+So qualitatively: cAMP pulses keep cells moving through development together. The fate choice itself — prespore versus prestalk — is controlled separately, and survives even in the mutant. On the next slide we turn this picture into an actual test.
+
+
+Slide 5: Hypotheses, assumptions, choice of test
+This is the part I actually want to walk through carefully, because it is where the statistical choices matter.
+
+The hypothesis on the slide is the simplest case: comparing wild-type AX4 against the acaA-minus mutant at 8 hours. 8 hours is the moment when cAMP pulses have just kicked in for wild-type, so it is the most informative time point. H₀ says: mean synchronicity is equal between the two strains at 8 hours, i.e. cAMP has no effect. Hₐ says: they differ, i.e. cAMP matters.
+
+The first real decision is: what is one independent observation? This is where single-cell data can trick you. We have thousands of cells, but many of them are from the same culture, so they are not independent. If you treat every cell as its own observation and run a t-test on individual cells, you get a microscopic standard error and a p-value that looks significant for a difference too small to matter biologically — pseudo-replication. So we collapse all the cells in one replicate into a single synchronicity value, per replicate, per time point, per strain. After that, n equals three per group. It feels small, but it is the honest number.
+
+Next, the confidence interval. We want a 95% CI around the mean synchronicity. A z-interval would need σ, the population variance, which we do not know. A t-interval does not need σ, but it assumes the three replicate values are normally distributed, which is impossible to verify with only three points. So we use a non-parametric bootstrap: resample the three replicate values with replacement, recompute the mean, repeat 10,000 times, and take the 2.5th and 97.5th percentiles of that distribution. It uses only the variability we actually observed, and it does not assume normality.
+
+Then the test. It is a replicate-level t-test, comparing two strains at one time point. Not chi-square, because our outcome is continuous on a 0-to-1 scale, not categorical counts. Not z-test, because σ is unknown. Not ANOVA, because we have specific pairwise comparisons in mind rather than one big factorial model. The specific version we use is Welch's t-test, which allows the two groups to have different variances. If p is below 0.05, we reject H₀.
+
+One last point. Significance and importance are not the same thing — with enough data, any tiny difference becomes significant. We avoid that here almost for free, because synchronicity is on a 0-to-1 scale, and the confidence intervals are plotted right next to the means. The gap between the AX4 and acaA-minus CIs at 8 hours is the effect size. When the CIs stop overlapping from 8 hours onward, we reject H₀, and we also see directly that the difference is large enough to be meaningful.
+
+
+Slide 6: Where this is heading — predicting transcription factors with AI
+Very briefly, where this goes next. The synchronicity result tells us wild-type cells develop in a highly coordinated way. The natural next question is: once that coordination is in place, how do cells split into prespore and prestalk fates, and which transcription factors drive that split?
+
+The direction I am exploring is to use AI models — foundation models trained on large collections of single-cell data, together with network-based approaches — to predict which transcription factors are most likely to be driving this fate decision. The idea is that these models can bring in biological context that a single dataset cannot provide on its own, and use it to suggest candidates worth looking at.
+
+The output I am aiming for is not a definitive answer, but a prioritized shortlist of transcription-factor candidates — hypotheses, ranked by how strongly the models and the data support them. That list is then something the Baylor group can actually take to the bench and test experimentally. The computational side proposes; the lab is what turns a candidate into a finding.
+
+I want to be upfront that this part of the PhD is still in early stages — I am figuring out which models and approaches fit this system best, and I am very open to suggestions on directions, methods, or things you think I should be careful about.
+
+Thank you — happy to take questions, and happy to hear ideas.
